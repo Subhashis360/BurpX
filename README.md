@@ -53,7 +53,7 @@ BurpX works by passively and actively scanning HTTP traffic for vulnerable param
 
 ## 🎞️ Demo
 
-![BurpX demo](https://github.com/Subhashis360/BurpX/blob/main/logo.png)
+![BurpX demo](https://github.com/Subhashis360/BurpX/blob/main/demo.png)
 
 > More demo GIFs and advanced usage guides are available in the [Wiki](https://github.com/Subhashis360/BurpX/wiki).
 
