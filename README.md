@@ -73,6 +73,6 @@ MIT License
 
 Made with 🧠 + ☕ by [Subhashis360](https://github.com/Subhashis360) — Contributions are welcome!
 
-🔗 Follow me on Twitter: [@SubhashisSec](https://twitter.com/SubhashisSec)
+🔗 Follow me on Twitter: [@subhashis](https://twitter.com/smtechyt2)
 🛠️ Join the community: Coming Soon!
 
