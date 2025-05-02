@@ -1,47 +1,78 @@
 
-🛡️🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-              🧪 BURPX - The Ultimate Injection Detector 🧪
-🛡️🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+<h1 align="center">
+  <img src="https://github.com/Subhashis360/BurpX/blob/main/logo.png" alt="BurpX" width="200px">
+  <br>
+</h1>
 
-                       [![BurpX Logo](https://raw.githubusercontent.com/yourrepo/burpx/main/logo.png)]()
+<h4 align="center">🚀 Advanced Security Extension for Burp Suite - Detects SQLi, SSRF, SSTI & more!</h4>
 
-📌 **What is BurpX?**
-BurpX is a powerful and intelligent Burp Suite extension built to detect **SQL Injection (SQLi)**, **Server-Side Request Forgery (SSRF)**, **Server-Side Template Injection (SSTI)**, and more. It enhances your pentesting experience with automation, accuracy, and a hacker-inspired UI.
+<p align="center">
+<a href="https://github.com/Subhashis360/BurpX/issues"><img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat"></a>
+<a href="https://github.com/Subhashis360/BurpX/releases"><img src="https://img.shields.io/github/release/Subhashis360/BurpX"></a>
+<a href="https://twitter.com/SubhashisSec"><img src="https://img.shields.io/twitter/follow/SubhashisSec.svg?logo=twitter"></a>
+</p>
 
-🚀 **Features**
-- 🤖 Automatic detection of common and advanced injection flaws
-- ⚙️ Custom payload injection engine
-- 📈 Real-time feedback on potential vulnerabilities
-- 🕵️ Smart passive and active scanning
-- 🎯 Compatible with Burp Suite Community and Pro editions
-
-🔌 **How to Install**
-1. Download or clone this repository:
-```bash
-git clone https://github.com/yourusername/burpx.git
-```
-
-2. Open Burp Suite > Extender > Extensions tab.
-3. Click **Add** and choose:
-   - Extension type: **Python** (or **Java**, depending on your build)
-   - Select file: Point to `burpx.py` or compiled `.jar` file
-
-4. Hit **Next** and you’re ready to go! 🎉
-
-💡 **How it Works**
-BurpX intercepts HTTP requests and analyzes parameters for signs of:
-- ❗ SQL Injection attempts
-- 🌐 SSRF behavior with DNS/IP redirection patterns
-- 🧩 SSTI through template syntax evaluation
-- 🛠️ Custom logic to expand and mutate payloads
-
-📺 **Awesome Demo & Animations**
-- [🎥 How BurpX Works](https://github.com/yourusername/burpx/assets/demo.mp4)
-- [📊 Visualization with GraphQL & Charts](https://github.com/yourusername/burpx/assets/stats.gif)
-- [⚡ Live Scan Animation](https://github.com/yourusername/burpx/assets/scan.gif)
-
-📜 **License**
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+<p align="center">
+  <a href="#features">🔥 Features</a> •
+  <a href="#installation">💻 Installation</a> •
+  <a href="#how-it-works">⚙️ How it Works</a> •
+  <a href="#demo">🎞️ Demo</a> •
+  <a href="#license">📜 License</a>
+</p>
 
 ---
-Made with ❤️ by [Your Name] | Follow for updates & issues 🚀
+
+`BurpX` is a powerful extension for Burp Suite designed to automatically detect and alert on vulnerabilities such as SQL Injection (SQLi), Server-Side Request Forgery (SSRF), Server-Side Template Injection (SSTI), and more.
+
+## 🚀 Features
+
+- 🧠 Intelligent scanning for multiple attack vectors
+- ⚡ Real-time alerting and logging
+- 🛡️ Customizable signature and payload support
+- 📊 Animated visualization of injection points (GitHub Actions)
+- 🧩 Easy integration into existing Burp Suite setup
+- 💾 Exportable reports for all findings
+
+## 💻 Installation
+
+1. Open **Burp Suite**.
+2. Navigate to **Extender > Extensions > Add**.
+3. Set **Extension type** to `Python` or `Java` (depending on your version).
+4. Select the `BurpX.py` or `BurpX.jar` file.
+5. Click **Next** and you're ready to go!
+
+🔧 Make sure Burp is configured with Jython standalone jar if using Python extensions.
+
+## ⚙️ How it Works
+
+BurpX works by passively and actively scanning HTTP traffic for vulnerable parameters, forms, and URLs. It uses:
+- Payload-based detection using carefully curated strings
+- Timing attacks for blind SQLi
+- SSRF endpoint detection via DNS & IP response analysis
+- SSTI fuzzing with template syntax injection
+
+## 🎞️ Demo
+
+![BurpX demo](https://github.com/Subhashis360/BurpX/assets/demo.gif)
+
+> More demo GIFs and advanced usage guides are available in the [Wiki](https://github.com/Subhashis360/BurpX/wiki).
+
+## 🔐 Supported Vulnerabilities
+
+- ✅ SQL Injection (Boolean, Error-based, Time-based)
+- ✅ SSRF (Internal IP detection, SSRF chains)
+- ✅ SSTI (Jinja2, Velocity, Twig)
+- ✅ Command Injection (Experimental)
+- ✅ Open Redirects, Header Injections
+
+## 📜 License
+
+MIT License
+
+---
+
+Made with 🧠 + ☕ by [Subhashis360](https://github.com/Subhashis360) — Contributions are welcome!
+
+🔗 Follow me on Twitter: [@SubhashisSec](https://twitter.com/SubhashisSec)
+🛠️ Join the community: Coming Soon!
+
