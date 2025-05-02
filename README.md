@@ -9,7 +9,7 @@
 <p align="center">
 <a href="https://github.com/Subhashis360/BurpX/issues"><img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat"></a>
 <a href="https://github.com/Subhashis360/BurpX/releases"><img src="https://img.shields.io/github/release/Subhashis360/BurpX"></a>
-<a href="https://twitter.com/SubhashisSec"><img src="https://img.shields.io/twitter/follow/SubhashisSec.svg?logo=twitter"></a>
+<a href="https://twitter.com/smtechyt2"><img src="https://img.shields.io/twitter/follow/SubhashisSec.svg?logo=twitter"></a>
 </p>
 
 <p align="center">
