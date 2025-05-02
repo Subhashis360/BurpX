@@ -59,11 +59,11 @@ BurpX works by passively and actively scanning HTTP traffic for vulnerable param
 
 ## 🔐 Supported Vulnerabilities
 
-- ✅ SQL Injection (Boolean, Error-based, Time-based)
-- ✅ SSRF (Internal IP detection, SSRF chains)
-- ✅ SSTI (Jinja2, Velocity, Twig)
-- ✅ Command Injection (Experimental)
-- ✅ Open Redirects, Header Injections
+- ✅ SQL Injection (Boolean, Error-based, Time-based) ( soon )
+- ✅ SSRF (Internal IP detection, SSRF chains) ( soon )
+- ✅ SSTI (Jinja2, Velocity, Twig) 
+- ✅ Command Injection (Experimental) ( soon )
+- ✅ Open Redirects, Header Injections ( soon )
 
 ## 📜 License
 
