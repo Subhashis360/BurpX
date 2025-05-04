@@ -14,6 +14,8 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.io.IOException
 import time
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.atomic.AtomicInteger
 
 class BurpExtender(IBurpExtender, IHttpListener, ITab):
     def registerExtenderCallbacks(self, callbacks):
@@ -23,6 +25,11 @@ class BurpExtender(IBurpExtender, IHttpListener, ITab):
         self._stderr = PrintWriter(callbacks.getStderr(), True)
         self._callbacks.setExtensionName("BurpX")
         self._stdout.println("[*] Extension Loaded: BurpX")
+        
+        
+        self.total_scans = java.util.concurrent.atomic.AtomicInteger(0)
+        self.completed_scans = java.util.concurrent.atomic.AtomicInteger(0)
+        
         self.initUI()
         self._callbacks.registerHttpListener(self)
         self._callbacks.addSuiteTab(self)
@@ -37,11 +44,156 @@ class BurpExtender(IBurpExtender, IHttpListener, ITab):
         self.vulnerability_details = {}
         self.dedup_vuln_keys = set()
         self.vuln_details_by_key = {}
+        
+        
+        self.executor = java.util.concurrent.Executors.newFixedThreadPool(5)
+        self.scan_queue = java.util.concurrent.LinkedBlockingQueue()
+        self.active_domains = set()  
+        self.start_queue_processor()
+
+    def start_queue_processor(self):
+        
+        class QueueProcessor(Runnable):
+            def __init__(self, burp_extender):
+                self.burp_extender = burp_extender
+                self.running = True
+            
+            def run(self):
+                while self.running:
+                    try:
+                        
+                        message_info = self.burp_extender.scan_queue.poll(1, java.util.concurrent.TimeUnit.SECONDS)
+                        if message_info:
+                            self.burp_extender.process_scan_task(message_info)
+                        
+                        
+                        self.burp_extender.updateQueueStatusLabel()
+                    except Exception as e:
+                        self.burp_extender._stderr.println("[!] Error in queue processor: " + str(e))
+                        import traceback
+                        self.burp_extender._stderr.println(traceback.format_exc())
+                    
+                    
+                    try:
+                        time.sleep(0.1)
+                    except:
+                        pass
+        
+        processor_thread = Thread(QueueProcessor(self))
+        processor_thread.setDaemon(True)
+        processor_thread.start()
+        self._stdout.println("[*] Queue processor started with max 5 concurrent scans")
+
+    def process_scan_task(self, message_info):
+        
+        try:
+            
+            request_info = self._helpers.analyzeRequest(message_info)
+            domain = str(request_info.getUrl().getHost())
+            
+            
+            if domain in self.active_domains:
+                self.scan_queue.put(message_info)
+                return
+            
+            self.active_domains.add(domain)
+            
+            class ScanTask(Runnable):
+                def __init__(self, burp_extender, message_info, domain):
+                    self.burp_extender = burp_extender
+                    self.message_info = message_info
+                    self.domain = domain
+                
+                def run(self):
+                    try:
+                        self.burp_extender.run_scans(self.message_info, self.domain)
+                    finally:
+                        
+                        if self.domain in self.burp_extender.active_domains:
+                            self.burp_extender.active_domains.remove(self.domain)
+                        
+                        self.burp_extender.completed_scans.incrementAndGet()
+                        
+                        self.burp_extender.updateQueueStatusLabel()
+            
+            
+            self.executor.submit(ScanTask(self, message_info, domain))
+            
+        except Exception as e:
+            self._stderr.println("[!] Error processing scan task: " + str(e))
+            import traceback
+            self._stderr.println(traceback.format_exc())
+            
+            if domain in self.active_domains:
+                self.active_domains.remove(domain)
+            
+            self.completed_scans.incrementAndGet()
+            self.updateQueueStatusLabel()
+
+    def updateQueueStatusLabel(self):
+        from javax.swing import SwingUtilities
+        
+        class UIUpdater(Runnable):
+            def __init__(self, burp_extender):
+                self.burp_extender = burp_extender
+            
+            def run(self):
+                try:
+                    total = self.burp_extender.total_scans.get()
+                    completed = self.burp_extender.completed_scans.get()
+                    pending = total - completed
+                    pending = max(0, pending)  
+                    
+                    
+                    status_text = "Scan Queue: {}/{} ({} pending)".format(completed, total, pending)
+                    self.burp_extender.queue_status_label.setText(status_text)
+                    
+                    
+                    vuln_title = "Vulnerabilities Found: SSRF ({}), Potential SSRF ({}), SSTI ({}), Path Traversal ({}), OS CMD Injection ({})".format(
+                        self.burp_extender.ssrf_count, self.burp_extender.potential_ssrf_count, 
+                        self.burp_extender.ssti_count, self.burp_extender.path_traversal_count, 
+                        self.burp_extender.os_command_injection_count)
+                    
+                    self.burp_extender.panel.setBorder(BorderFactory.createTitledBorder(vuln_title))
+                except Exception as e:
+                    self.burp_extender._stderr.println("[!] Error updating queue status: " + str(e))
+        
+        SwingUtilities.invokeLater(UIUpdater(self))
+
+    def run_scans(self, message_info, domain):
+        try:
+            self._stdout.println("[*] Starting scans for domain: " + domain)
+            self.scan_ssti(message_info)
+            self.scan_ssrf(message_info)
+            self.scan_path_traversal(message_info)
+            self.scan_os_command_injection(message_info)
+            self._stdout.println("[*] Completed scans for domain: " + domain)
+        except Exception as e:
+            self._stderr.println("[!] Error in scan: " + str(e))
+            import traceback
+            self._stderr.println(traceback.format_exc())
+        finally:
+            
+            if domain in self.active_domains:
+                self.active_domains.remove(domain)
 
     def initUI(self):
+        
         self.panel = JPanel()
-        self.panel.setLayout(BoxLayout(self.panel, BoxLayout.Y_AXIS))
-        self.panel.setBorder(BorderFactory.createTitledBorder("Vulnerabilities"))
+        self.panel.setLayout(BorderLayout())
+        
+        
+        vuln_panel = JPanel()
+        vuln_panel.setLayout(BoxLayout(vuln_panel, BoxLayout.Y_AXIS))
+        vuln_panel.setBorder(BorderFactory.createTitledBorder("Vulnerabilities"))
+        
+        
+        status_panel = JPanel(BorderLayout())
+        self.queue_status_label = JLabel("Scan Queue: 0/0 (0 pending)")
+        self.queue_status_label.setFont(Font("SansSerif", Font.BOLD, 12))
+        status_panel.add(self.queue_status_label, BorderLayout.NORTH)
+        
+        
         column_names = ["Full URL", "Parameter", "Payload", "Vulnerability Type"]
         self.model = DefaultTableModel(column_names, 0)
         self.table = JTable(self.model)
@@ -63,6 +215,12 @@ class BurpExtender(IBurpExtender, IHttpListener, ITab):
                 elif value == "ssti":
                     comp.setForeground(java.awt.Color.BLUE)
                     comp.setFont(Font("Monospaced", Font.BOLD, 12))
+                elif value == "path traversal":
+                    comp.setForeground(java.awt.Color.GREEN.darker())
+                    comp.setFont(Font("Monospaced", Font.BOLD, 12))
+                elif value == "os command injection":
+                    comp.setForeground(java.awt.Color.MAGENTA.darker())
+                    comp.setFont(Font("Monospaced", Font.BOLD, 12))
                 return comp
         
         self.table.getColumnModel().getColumn(3).setCellRenderer(VulnTypeCellRenderer())
@@ -73,7 +231,13 @@ class BurpExtender(IBurpExtender, IHttpListener, ITab):
         self.setupContextMenu()
         scroll_pane = JScrollPane(self.table)
         scroll_pane.setPreferredSize(Dimension(850, 300))
-        self.panel.add(scroll_pane)
+        
+        
+        vuln_panel.add(scroll_pane)
+        
+        
+        self.panel.add(status_panel, BorderLayout.NORTH)
+        self.panel.add(vuln_panel, BorderLayout.CENTER)
         
     def setupContextMenu(self):
         popup_menu = JPopupMenu()
@@ -116,31 +280,15 @@ class BurpExtender(IBurpExtender, IHttpListener, ITab):
         if messageIsRequest:
             return
         
-        
-        final_message_info = messageInfo
-        
-        
-        class ScanRunner(Runnable):
-            def __init__(self, burp_extender, message_info):
-                self.burp_extender = burp_extender
-                self.message_info = message_info
+        try:
             
-            def run(self):
-                try:
-                    self.burp_extender._stdout.println("[*] Starting background scans")
-                    self.burp_extender.scan_ssti(self.message_info)
-                    self.burp_extender.scan_ssrf(self.message_info)
-                    self.burp_extender.scan_path_traversal(self.message_info)
-                    self.burp_extender.scan_os_command_injection(self.message_info)
-                    self.burp_extender._stdout.println("[*] Background scans completed")
-                except Exception as e:
-                    self.burp_extender._stderr.println("[!] Error in background scan: " + str(e))
-                    import traceback
-                    self.burp_extender._stderr.println(traceback.format_exc())
-        
-        
-        scanner_thread = Thread(ScanRunner(self, final_message_info))
-        scanner_thread.start()
+            self.total_scans.incrementAndGet()
+            
+            self.scan_queue.put(messageInfo)
+            
+            self.updateQueueStatusLabel()
+        except Exception as e:
+            self._stderr.println("[!] Error queueing scan: " + str(e))
 
     def find_all_occurrences(self, text, substring):
         positions = []
@@ -597,14 +745,14 @@ class BurpExtender(IBurpExtender, IHttpListener, ITab):
             
             
             cmd_injection_payloads = [
-                "|echo hello", 
-                ";echo hello", 
-                "`echo hello`", 
-                "$(echo hello)"
+                "|echo subhashisop", 
+                ";echo subhashisop", 
+                "`echo subhashisop`", 
+                "$(echo subhashisop)"
             ]
             
             
-            success_indicators = ["hello"]
+            success_indicators = ["subhashisop"]
             
             parameters = request_info.getParameters()
             
